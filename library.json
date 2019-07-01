@@ -1,0 +1,20 @@
+{
+  "name": "ESPSmart",
+  "description": "Use your ESP8266 or ESP32 to operate smart devices. Use MQTT transport",
+  "keywords": "MQTT, wi-fi, wireless",
+  "authors": "ALab."
+  {
+    "name": "ALab."
+  },
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/sergewddm/ESPSmart.git"
+  },
+  "version": "1.00",
+  "frameworks": [
+        "arduino",
+        "pubsubclient"
+  ],
+  "platforms": "*"
+}
