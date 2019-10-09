@@ -10,7 +10,7 @@
 #include <Client.h>
 #include <string.h>
 #include "Led.h"
-#include "debug.h"
+#include "debugStr.h"
 
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>
