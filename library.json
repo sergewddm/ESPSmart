@@ -2,7 +2,7 @@
   "name": "ESPSmart",
   "description": "Use your ESP8266 or ESP32 to operate smart devices. Use MQTT transport",
   "keywords": "MQTT, wi-fi, wireless",
-  "authors": "ALab."
+  "authors":
   {
     "name": "ALab."
   },
@@ -11,15 +11,10 @@
     "type": "git",
     "url": "https://github.com/sergewddm/ESPSmart.git"
   },
-  "version": "1.00",
+  "version": "1.0.0",
   "frameworks": "arduino",
    "platforms": ["espressif8266", "espressif32"],
   "dependencies": [
-    {
-      "name": "AsyncMqttClient",
-      "version": "^0.8.2",
-      "platforms": ["espressif8266", "espressif32"],
-    },
     {
       "name": "ESPAsyncTCP",
       "version": "^1.1.0",
