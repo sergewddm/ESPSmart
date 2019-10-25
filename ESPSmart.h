@@ -3,10 +3,10 @@
 //
 // Copyright (c) 2019 ALab.
 //
-#define DEBUG_ENABLE  
+//#define DEBUG_ENABLE  
 
 #include <Arduino.h>
-#include <PubSubClient.h>
+#include <AsyncMqttClient.h>
 #include <Client.h>
 #include <string.h>
 #include "Led.h"
@@ -40,7 +40,7 @@
 // время на попытку соединения по MQTT
 #define MQTT_CONNECT_TIMEOUT 10000
 
-#define MQTT_ON_CHANGE_STATUS_CALLBACK_SIGNATURE void (*mqtt_on_change_status_callback)(bool connectStatus)
+//#define MQTT_ON_CHANGE_STATUS_CALLBACK_SIGNATURE void (*mqtt_on_change_status_callback)(bool connectStatus)
 
 // WIFI String size
 #define WIFI_SSID_STR_SIZE 32
@@ -52,11 +52,11 @@
 // время на попытку соединения по WiFi
 #define WIFI_CONNECT_TIMEOUT 10000
 
-#define WIFI_ON_CHANGE_STATUS_CALLBACK_SIGNATURE void (*wifi_on_change_status_callback)(bool connectStatus)
+//#define WIFI_ON_CHANGE_STATUS_CALLBACK_SIGNATURE void (*wifi_on_change_status_callback)(bool connectStatus)
 
-#define BI_LED 2
+//#define BI_LED 2
  
-class ESPSmart: public PubSubClient {
+class ESPSmart: public AsyncMqttClient {
     
 
     // Pointer to WiFi object
@@ -92,7 +92,7 @@ class ESPSmart: public PubSubClient {
     // метод проверки связи <MQTT>
     void check_mqtt();
 
-    MQTT_ON_CHANGE_STATUS_CALLBACK_SIGNATURE;
+    //MQTT_ON_CHANGE_STATUS_CALLBACK_SIGNATURE;
 
     // update web data
     // имя mDNS сервера для установки обновлений
@@ -113,20 +113,22 @@ class ESPSmart: public PubSubClient {
     void webUpdaterSetup();
     void webUpdaterLoop();
   
+    // LedPin
+    uint8_t _bi_led_pin = 0;
 
     bool _autoConnect = false;
 
     public:
     // LED
-    Led _led;
+    Led* _pled;
     // Constructors
-    ESPSmart();
+    ESPSmart(uint8_t led_pin = 0, bool led_inverse = false);
     // Methods
     // set initial data:
     //void setWiFiClient(Client &wifi_client);
 
-    void setWiFiCallback(WIFI_ON_CHANGE_STATUS_CALLBACK_SIGNATURE);
-    void setMQTTCallback(MQTT_ON_CHANGE_STATUS_CALLBACK_SIGNATURE);
+   // void setWiFiCallback(WIFI_ON_CHANGE_STATUS_CALLBACK_SIGNATURE);
+   // void setMQTTCallback(MQTT_ON_CHANGE_STATUS_CALLBACK_SIGNATURE);
    
     void setMQTT(const char *mqtt_id, const char *mqtt_server, const uint16_t mqtt_server_port, 
     const char *mqtt_lwt_topic, const char *mqtt_lwt_message, bool willRetain = false,

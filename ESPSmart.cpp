@@ -5,31 +5,25 @@
 //
 
 #include "ESPSmart.h"
-
+#include "Led.h"
 
 
 // Constructors
 
-ESPSmart::ESPSmart(): _led(BI_LED)
+ESPSmart::ESPSmart(uint8_t led_pin, bool led_inverse)
 {
   // set default values
   _wifi_obj = &WiFi;
-  _wifi_is_connect = _mqtt_is_connect = false;
-  setCallback(NULL);
-  setWiFiCallback(NULL);
-  setMQTTCallback(NULL);
-  
+  _wifi_is_connect = _mqtt_is_connect = false; 
+  _bi_led_pin = led_pin;
+  if (_bi_led_pin)
+  {
+    _pled = new Led(_bi_led_pin, led_inverse);
+    _pled->setMode(LED_OFF);
+  }
+   else _pled = nullptr; 
 }
 
-void ESPSmart::setWiFiCallback(WIFI_ON_CHANGE_STATUS_CALLBACK_SIGNATURE)
-{
-  this->wifi_on_change_status_callback = wifi_on_change_status_callback;
-}
-
-void ESPSmart::setMQTTCallback(MQTT_ON_CHANGE_STATUS_CALLBACK_SIGNATURE)
-{
-  this->mqtt_on_change_status_callback = mqtt_on_change_status_callback;
-}
 
 #ifdef ESP8266
 // WebUpdate
@@ -331,28 +325,28 @@ void ESPSmart::mqttDisconnect()
   disconnect();
 }
 
-bool ESPSmart::mqttConnect()
+ESPSmart::mqttConnect()
 {
   DPRINTLN("[ESPSmart::mqttConnect]");
   if (!wifiIsConnect()) 
   {
     DPRINTLN("!wifiIsConnect()");
-    return false;
+    return;
   }
   if (!_mqtt_id)
   {
     DPRINTLN("!_mqtt_id");
-    return false;
+    return;
   } 
   if (!_mqtt_server) 
   {
     DPRINTLN("!_mqtt_server");
-    return false;
+    return;
   }
   if (!_mqtt_port)
   { 
     DPRINTLN("!_mqtt_port");
-    return false;
+    return;
   }
   if (connected()) 
   {
@@ -440,7 +434,11 @@ bool ESPSmart::mqttConnect()
     DPRINT(mqtt_lwt_topic);
     DPRINT("  lwt_message: ");
     DPRINTLN(mqtt_lwt_message);
-    return connect(mqtt_id, mqtt_login, mqtt_pass, mqtt_lwt_topic, 1, _mqtt_willRetain, mqtt_lwt_message);
+    
+    setClientId(mqtt_id);
+    setCredentials(mqtt_login, mqtt_pass);
+    setWill(mqtt_lwt_topic, 1, _mqtt_willRetain, mqtt_lwt_message);
+    connect();
   }
   else if ((mqtt_login) && (mqtt_pass))
   {
@@ -451,14 +449,19 @@ bool ESPSmart::mqttConnect()
     DPRINT(mqtt_login);
     DPRINT("  pass: ");
     DPRINTLN(mqtt_pass);
-      return connect(mqtt_id, mqtt_login, mqtt_pass);
+
+    setClientId(mqtt_id);
+    setCredentials(mqtt_login, mqtt_pass);
+    connect();
   }
   else
   {
      DPRINTLN("connect(id)");
      DPRINT("id: ");
      DPRINTLN(mqtt_id);
-     return connect(mqtt_id);
+     
+     setClientId(mqtt_id);
+     connect());
   }
 }
 
@@ -471,11 +474,6 @@ void ESPSmart::check_mqtt()
     {
        DPRINTLN("[ESPSmart::check_mqtt()]. Set _mqtt_is_connect = true");
       _mqtt_is_connect = true;
-      if (mqtt_on_change_status_callback) 
-      {
-         DPRINTLN("[ESPSmart::check_mqtt()]. call mqtt_callback");
-        (*mqtt_on_change_status_callback)(_mqtt_is_connect);
-      }
     }
     return;
   }
@@ -485,11 +483,6 @@ void ESPSmart::check_mqtt()
     {
        DPRINTLN("[ESPSmart::check_mqtt()]. Set _mqtt_is_connect = false");
       _mqtt_is_connect = false;
-      if (mqtt_on_change_status_callback) 
-      {
-         DPRINTLN("[ESPSmart::check_mqtt()]. call mqtt_callback");
-        (*mqtt_on_change_status_callback)(_mqtt_is_connect);
-      }
     }   
 
   // счёчик времени на установление соединения по MQTT
@@ -528,7 +521,7 @@ void ESPSmart::check_mqtt()
   }
 }
 
-bool ESPSmart::publish_PM(const char *topic, const char *payload, bool retained)
+/* bool ESPSmart::publish_PM(const char *topic, const char *payload, bool retained)
 {
   if (!topic) return false;
 
@@ -536,7 +529,7 @@ bool ESPSmart::publish_PM(const char *topic, const char *payload, bool retained)
   strcpy_P(topic_buf, topic);
 
   return publish_P(topic_buf, payload, retained);
-}
+} */
 
 bool ESPSmart::publish_i8(const char *topic, int8_t payload, bool retained)
 {
@@ -544,7 +537,7 @@ bool ESPSmart::publish_i8(const char *topic, int8_t payload, bool retained)
 
   char buf[MQTT_VAL_STR_SIZE];
   itoa(payload, buf, 10); 
-  return publish(topic, buf, retained);
+  return publish(topic, 1, retained, buf);
 }
 
 bool ESPSmart::publish_Pi8(const char *topic, int8_t payload, bool retained)
@@ -557,7 +550,7 @@ bool ESPSmart::publish_Pi8(const char *topic, int8_t payload, bool retained)
   char topic_buf[MQTT_TOPIC_STR_SIZE];
   strcpy_P(topic_buf, topic);
 
-  return publish(topic_buf, buf, retained);
+  return publish(topic_buf, retained, buf);
 } 
 
 
@@ -579,7 +572,7 @@ bool ESPSmart::publish_i32(const char *topic, int32_t payload, bool retained)
   DPRINT(buf);
   DPRINT("   retained: ");
   DPRINTLN(retained);
-  return publish(topic, buf, retained);
+  return publish(topic, retained, buf);
 }
 
 bool ESPSmart::publish_Pi32(const char *topic, int32_t payload, bool retained)
@@ -592,7 +585,7 @@ bool ESPSmart::publish_Pi32(const char *topic, int32_t payload, bool retained)
   char topic_buf[MQTT_TOPIC_STR_SIZE];
   strcpy_P(topic_buf, topic);
 
-  return publish(topic_buf, buf, retained);
+  return publish(topic_buf, retained, buf);
 }
 
 bool ESPSmart::publish_d(const char *topic, double payload, signed char width, unsigned char prec, bool retained)
@@ -601,7 +594,7 @@ bool ESPSmart::publish_d(const char *topic, double payload, signed char width, u
 
   char buf[MQTT_VAL_STR_SIZE];
   dtostrf(payload, width, prec, buf);
-  return publish(topic, buf, retained);
+  return publish(topic, retained, buf);
 }
 
 bool ESPSmart::publish_Pd(const char *topic, double payload, signed char width, unsigned char prec, bool retained)
@@ -614,7 +607,7 @@ bool ESPSmart::publish_Pd(const char *topic, double payload, signed char width, 
   char topic_buf[MQTT_TOPIC_STR_SIZE];
   strcpy_P(topic_buf, topic);
 
-  return publish(topic_buf, buf, retained);
+  return publish(topic_buf, retained, buf);
 }
 
 bool ESPSmart::publish_b(const char *topic, bool payload, bool retained)
@@ -623,7 +616,7 @@ bool ESPSmart::publish_b(const char *topic, bool payload, bool retained)
 
   char buf[MQTT_VAL_STR_SIZE];
   itoa((uint8_t)payload, buf, 10);
-  return publish(topic, buf, retained);
+  return publish(topic, retained, buf);
 }
 
 bool ESPSmart::publish_Pb(const char *topic, bool payload, bool retained)
@@ -636,7 +629,7 @@ bool ESPSmart::publish_Pb(const char *topic, bool payload, bool retained)
   char topic_buf[MQTT_TOPIC_STR_SIZE];
   strcpy_P(topic_buf, topic);
 
-  return publish(topic_buf, buf, retained);
+  return publish(topic_buf, retained, buf);
 }
 
 bool ESPSmart::subscribe_P(const char *topic, uint8_t qos)
@@ -659,10 +652,10 @@ bool ESPSmart::unsubscribe_P(const char *topic)
   return unsubscribe(topic_buf);
 }
 
-int8_t ESPSmart::getMQTTState()
+/* int8_t ESPSmart::getMQTTState()
 {
   return state();
-}
+} */
 
 wl_status_t ESPSmart::getWiFiStatus()
 {
@@ -670,9 +663,9 @@ wl_status_t ESPSmart::getWiFiStatus()
    else return _wifi_obj->status();
 }
 
-bool ESPSmart::loop()
+void ESPSmart::loop()
 {
-  _led.update();
+  if (_bi_led_pin) _led->update();
   webUpdaterLoop();
 
   if (_autoConnect) 
@@ -680,6 +673,4 @@ bool ESPSmart::loop()
     check_wifi();
     check_mqtt();
   }
-
-  return PubSubClient::loop();
 }
