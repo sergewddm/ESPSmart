@@ -125,7 +125,7 @@ class ESPSmart: public AsyncMqttClient {
     ESPSmart(uint8_t led_pin = 0, bool led_inverse = false);
     // Methods
     // set initial data:
-    //void setWiFiClient(Client &wifi_client);
+    void setLed(uint8_t led_pin, bool led_inverse = false);
 
    // void setWiFiCallback(WIFI_ON_CHANGE_STATUS_CALLBACK_SIGNATURE);
    // void setMQTTCallback(MQTT_ON_CHANGE_STATUS_CALLBACK_SIGNATURE);

@@ -5,7 +5,6 @@
 //
 
 #include "ESPSmart.h"
-#include "Led.h"
 
 
 // Constructors
@@ -19,7 +18,7 @@ ESPSmart::ESPSmart(uint8_t led_pin, bool led_inverse)
   if (_bi_led_pin)
   {
     _pled = new Led(_bi_led_pin, led_inverse);
-    _pled->setMode(LED_OFF);
+    _pled->setMode(Led::LED_OFF);
   }
    else _pled = nullptr; 
 }
@@ -168,6 +167,17 @@ void ESPSmart::setAutoConnect(bool autoConnect)
   // в цикле автоконнект сам всё подключит 
 }
 
+ESPSmart::setLed(uint8_t led_pin, bool led_inverse)
+{
+  _bi_led_pin = led_pin;
+  if (_bi_led_pin)
+  {
+    _pled = new Led(_bi_led_pin, led_inverse);
+    _pled->setMode(Led::LED_OFF);
+  }
+   else _pled = nullptr; 
+}
+
 void ESPSmart::printWiFi()
 {
 
@@ -258,30 +268,22 @@ void ESPSmart::check_wifi()
 {
   if (wifiIsConnect())
   {
-    // если подключились первый раз, то вызываем callback
+    // если подключились первый раз
     if (!_wifi_is_connect)
     {
       DPRINTLN("[ESPSmart::check_wifi()]. Set _wifi_is_connect = true");
       _wifi_is_connect = true;
-      if (wifi_on_change_status_callback) 
-      {
-         DPRINTLN("[ESPSmart::check_wifi()]. call wifi_callback()");
-        (*wifi_on_change_status_callback)(_wifi_is_connect);
-      }
+      if (_bi_led_pin) _pled->setMode(Led::LED_ON); 
     }
     return;
   }
 
-  // вызываем callback для disconnect
+  // wifi выкл.
   if (_wifi_is_connect)
     {
       DPRINTLN("[ESPSmart::check_wifi()]. Set _wifi_is_connect = false");
       _wifi_is_connect = false;
-      if (wifi_on_change_status_callback) 
-      {
-         DPRINTLN("[ESPSmart::check_wifi()]. call wifi_callback()");
-        (*wifi_on_change_status_callback)(_wifi_is_connect);
-      }
+      if (_bi_led_pin) _pled->setMode(Led::LED_4HZ);      
     }
 
   // счёчик времени на установление соединения по WiFi
@@ -469,20 +471,29 @@ void ESPSmart::check_mqtt()
 {
   if (mqttIsConnect())
   {
-    // если подключились первый раз, то вызываем callback
+    // если подключились первый раз
     if (!_mqtt_is_connect)
     {
        DPRINTLN("[ESPSmart::check_mqtt()]. Set _mqtt_is_connect = true");
       _mqtt_is_connect = true;
+      if (_bi_led_pin) _pled->setMode(Led::LED_FADEINOUT); 
     }
     return;
   }
 
-  // вызываем callback для disconnect
+  // mqtt disconnect
   if (_mqtt_is_connect)
     {
        DPRINTLN("[ESPSmart::check_mqtt()]. Set _mqtt_is_connect = false");
       _mqtt_is_connect = false;
+
+      if (_bi_led_pin)
+      {
+        // проверяем, доступен ли WiFi
+        if (wifiIsConnect()) _pled->setMode(Led::LED_ON);
+         else _pled->setMode(Led::LED_4HZ);
+      }
+      
     }   
 
   // счёчик времени на установление соединения по MQTT
