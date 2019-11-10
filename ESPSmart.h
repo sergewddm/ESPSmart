@@ -56,14 +56,13 @@
 
 //#define BI_LED 2
  
-class ESPSmart: public AsyncMqttClient {
-    
-
+class ESPSmart: public AsyncMqttClient 
+{
     // Pointer to WiFi object
     #ifdef ESP8266
     ESP8266WiFiClass *_wifi_obj = NULL;
     #else
-    WiFiClass *_wifi = NULL;
+    WiFiClass *_wifi_obj = NULL;
     #endif
 
     
@@ -77,8 +76,6 @@ class ESPSmart: public AsyncMqttClient {
 
     // метод проверки связи WiFi
     void check_wifi();
-
-    WIFI_ON_CHANGE_STATUS_CALLBACK_SIGNATURE;
 
     // MQTT Data
     const char *_mqtt_login;
@@ -121,11 +118,12 @@ class ESPSmart: public AsyncMqttClient {
     public:
     // LED
     Led* _pled;
+    
     // Constructors
-    ESPSmart(uint8_t led_pin = 0, bool led_inverse = false);
+    ESPSmart(uint8_t led_pin = 0, bool led_logic = true);
     // Methods
     // set initial data:
-    void setLed(uint8_t led_pin, bool led_inverse = false);
+    void setLed(uint8_t led_pin, bool led_logic = true);
 
    // void setWiFiCallback(WIFI_ON_CHANGE_STATUS_CALLBACK_SIGNATURE);
    // void setMQTTCallback(MQTT_ON_CHANGE_STATUS_CALLBACK_SIGNATURE);
@@ -145,12 +143,12 @@ class ESPSmart: public AsyncMqttClient {
     PGM_P mqtt_lwt_topic, PGM_P mqtt_lwt_message, bool willRetain = false,
     PGM_P mqtt_login = NULL, PGM_P mqtt_password = NULL);
     
-    void setWiFi(const char *wifi_ssid, const char *wifi_password, int32_t wifi_channel = 0);
+   void setWiFi(const char *wifi_ssid, const char *wifi_password, int32_t wifi_channel = 0);
 
-    void setWiFi(const __FlashStringHelper *wifi_ssid, const __FlashStringHelper *wifi_password, int32_t wifi_channel = 0)
-        { setWiFi_P((PGM_P) wifi_ssid, (PGM_P) wifi_password, wifi_channel); }
-
-    void setWiFi_P(PGM_P wifi_ssid, PGM_P wifi_password, int32_t wifi_channel = 0);
+   // void setWiFi(const __FlashStringHelper *wifi_ssid, const __FlashStringHelper *wifi_password, int32_t wifi_channel = 0)
+   //    { setWiFi_P((PGM_P) wifi_ssid, (PGM_P) wifi_password, wifi_channel); }
+   //
+   // void setWiFi_P(PGM_P wifi_ssid, PGM_P wifi_password, int32_t wifi_channel = 0);
 
     // Check current wi-fi connection status
     bool wifiIsConnect();
@@ -161,7 +159,7 @@ class ESPSmart: public AsyncMqttClient {
     wl_status_t wifiConnect();
     // MQTT control
     void mqttDisconnect();
-    bool mqttConnect();
+    void mqttConnect();
 
     //All Control auto
     // устанавливаем флаг автоподключения по WiFi и MQTT
@@ -213,7 +211,7 @@ class ESPSmart: public AsyncMqttClient {
 
     // loop methods
     //true - mqtt client connected
-    bool loop();
+    void loop();
 
 
 };

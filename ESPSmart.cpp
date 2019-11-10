@@ -9,7 +9,7 @@
 
 // Constructors
 
-ESPSmart::ESPSmart(uint8_t led_pin, bool led_inverse)
+ESPSmart::ESPSmart(uint8_t led_pin, bool led_logic)
 {
   // set default values
   _wifi_obj = &WiFi;
@@ -17,12 +17,23 @@ ESPSmart::ESPSmart(uint8_t led_pin, bool led_inverse)
   _bi_led_pin = led_pin;
   if (_bi_led_pin)
   {
-    _pled = new Led(_bi_led_pin, led_inverse);
+    _pled = new Led(_bi_led_pin, led_logic);
     _pled->setMode(Led::LED_OFF);
   }
    else _pled = nullptr; 
 }
 
+
+// Wifi setup
+void ESPSmart::setWiFi(const char *wifi_ssid, const char *wifi_password, int32_t wifi_channel)
+{
+  DPRINTLN("[ESPSmart::setWiFi]");
+  _wifi_ssid = wifi_ssid;
+  _wifi_password = wifi_password;
+  _wifi_channel = wifi_channel;
+ 
+  _wifi_data_progmem = false;
+}
 
 #ifdef ESP8266
 // WebUpdate
@@ -68,17 +79,9 @@ void ESPSmart::webUpdaterSetup()
 }
 #endif
 
-void ESPSmart::setWiFi(const char *wifi_ssid, const char *wifi_password, int32_t wifi_channel)
-{
-  DPRINTLN("[ESPSmart::setWiFi]");
-  _wifi_ssid = wifi_ssid;
-  _wifi_password = wifi_password;
-  _wifi_channel = wifi_channel;
 
-  _wifi_data_progmem = false;
-}
 
-void ESPSmart::setWiFi_P(PGM_P wifi_ssid, PGM_P wifi_password, int32_t wifi_channel)
+/* void ESPSmart::setWiFi_P(PGM_P wifi_ssid, PGM_P wifi_password, int32_t wifi_channel)
 {
   DPRINTLN("[ESPSmart::setWiFi_P]");
   _wifi_ssid = wifi_ssid;
@@ -86,7 +89,7 @@ void ESPSmart::setWiFi_P(PGM_P wifi_ssid, PGM_P wifi_password, int32_t wifi_chan
   _wifi_channel = wifi_channel;
 
   _wifi_data_progmem = true;
-}
+} */
 
 void ESPSmart::setMQTT(const char *mqtt_id, const char *mqtt_server, const uint16_t mqtt_server_port,
 const char *mqtt_lwt_topic, const char *mqtt_lwt_message, 
@@ -167,12 +170,12 @@ void ESPSmart::setAutoConnect(bool autoConnect)
   // в цикле автоконнект сам всё подключит 
 }
 
-ESPSmart::setLed(uint8_t led_pin, bool led_inverse)
+void ESPSmart::setLed(uint8_t led_pin, bool led_logic)
 {
   _bi_led_pin = led_pin;
   if (_bi_led_pin)
   {
-    _pled = new Led(_bi_led_pin, led_inverse);
+    _pled = new Led(_bi_led_pin, led_logic);
     _pled->setMode(Led::LED_OFF);
   }
    else _pled = nullptr; 
@@ -327,7 +330,7 @@ void ESPSmart::mqttDisconnect()
   disconnect();
 }
 
-ESPSmart::mqttConnect()
+void ESPSmart::mqttConnect()
 {
   DPRINTLN("[ESPSmart::mqttConnect]");
   if (!wifiIsConnect()) 
@@ -463,7 +466,7 @@ ESPSmart::mqttConnect()
      DPRINTLN(mqtt_id);
      
      setClientId(mqtt_id);
-     connect());
+     connect();
   }
 }
 
@@ -676,7 +679,7 @@ wl_status_t ESPSmart::getWiFiStatus()
 
 void ESPSmart::loop()
 {
-  if (_bi_led_pin) _led->update();
+  if (_bi_led_pin) _pled->update();
   webUpdaterLoop();
 
   if (_autoConnect) 
