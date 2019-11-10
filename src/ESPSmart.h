@@ -210,7 +210,6 @@ class ESPSmart: public AsyncMqttClient
     wl_status_t getWiFiStatus();
 
     // loop methods
-    //true - mqtt client connected
     void loop();
 
 
